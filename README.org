@@ -1,120 +1,110 @@
-#+author: conao3
-#+date: <2018-10-25 Thu>
+#+title: indent-lint.el
+#+author: Naoya Yamashita
 
-[[https://github.com/conao3/indent-lint.el][https://raw.githubusercontent.com/conao3/files/master/blob/headers/png/indent-lint.el.png]]
 [[https://github.com/conao3/indent-lint.el/blob/master/LICENSE][https://img.shields.io/github/license/conao3/indent-lint.el.svg?style=flat-square]]
 [[https://github.com/conao3/indent-lint.el/releases][https://img.shields.io/github/tag/conao3/indent-lint.el.svg?style=flat-square]]
 [[https://github.com/conao3/indent-lint.el/actions][https://github.com/conao3/indent-lint.el/workflows/Main%20workflow/badge.svg]]
-[[https://app.codacy.com/project/conao3/indent-lint.el/dashboard][https://img.shields.io/codacy/grade/62a36f4f04524d5e8c758440e8071c45.svg?logo=codacy&style=flat-square]]
-[[https://twitter.com/conao_3][https://img.shields.io/badge/twitter-@conao__3-blue.svg?logo=twitter&style=flat-square]]
-[[https://conao3-support.slack.com/join/shared_invite/enQtNjUzMDMxODcyMjE1LWUwMjhiNTU3Yjk3ODIwNzAxMTgwOTkxNmJiN2M4OTZkMWY0NjI4ZTg4MTVlNzcwNDY2ZjVjYmRiZmJjZDU4MDE][https://img.shields.io/badge/chat-on_slack-blue.svg?logo=slack&style=flat-square]]
 
-* Table of Contents
-- [[#description][Description]]
-- [[#install][Install]]
-- [[#usage][Usage]]
-- [[#customize][Customize]]
-- [[#syntaxes][Syntaxes]]
-- [[#information][Information]]
-  - [[#community][Community]]
-  - [[#contribution][Contribution]]
-  - [[#migration][Migration]]
-  - [[#license][License]]
-  - [[#author][Author]]
-  - [[#contributors][Contributors]]
-  - [[#special-thanks][Special Thanks]]
+Asynchronous indentation linter for Emacs with Flycheck integration.
 
-* Description
-Async indentation checker and flycheck frontend.
+* Overview
 
-* Install
-- M-x ~package-install~ indent-lint
-- M-x ~package-install~ flycheck-indent
+indent-lint.el checks your buffer's indentation against Emacs's built-in indentation rules by running the comparison in a clean, isolated Emacs subprocess. This approach ensures accurate results without interference from your current configuration state.
+
+The package includes =flycheck-indent=, a Flycheck checker that provides real-time indentation feedback as you write code.
+
+* Installation
+
+Both packages are available on MELPA:
+
+#+begin_src emacs-lisp
+  (package-install 'indent-lint)
+  (package-install 'flycheck-indent)
+#+end_src
+
+Or with =use-package=:
+
+#+begin_src emacs-lisp
+  (use-package indent-lint)
+
+  (use-package flycheck-indent
+    :after flycheck
+    :config
+    (flycheck-indent-setup))
+#+end_src
 
 * Usage
-** indent-lint
-- interactive
 
-  M-x ~indent-lint~
+** Interactive Use
 
-  Lint indentation for current-buffer.
+Run =M-x indent-lint= to check the current buffer. After a moment, a diff buffer will appear showing any lines with incorrect indentation.
 
-- Lisp program
+** Programmatic Use
 
-  Use ~indent-lint~ function.
-  #+begin_src emacs-lisp
-    (indent-lint BUF)
-  #+end_src
-
-  ~BUF~ accepts buffer name (string) or buffer (buffer object).
-
-  After few seconds, a buffer with different indentation lines are popped.
-
-** flycheck-indent
-To enable, use something like this.
 #+begin_src emacs-lisp
-  (eval-after-load 'flycheck
-    '(flycheck-indent-setup))
+  (indent-lint BUFFER)
 #+end_src
 
-* Customize
-- indent-lint-before-indent-fn :: The function will eval before indent
-- indent-lint-verbose :: If non-nil, output diff verbose.
+=BUFFER= accepts either a buffer name (string) or buffer object.
 
-* Information
-** Community
-Any feedback and suggestions are welcome!
+** Flycheck Integration
 
-You can use GitHub issues, but you can also use [[https://conao3-support.slack.com/join/shared_invite/enQtNjUzMDMxODcyMjE1LWUwMjhiNTU3Yjk3ODIwNzAxMTgwOTkxNmJiN2M4OTZkMWY0NjI4ZTg4MTVlNzcwNDY2ZjVjYmRiZmJjZDU4MDE][Slack]]
-if you want a more casual conversation.
+Enable the Flycheck checker with:
 
-** Contribution
-We welcome PR!
+#+begin_src emacs-lisp
+  (with-eval-after-load 'flycheck
+    (flycheck-indent-setup))
+#+end_src
 
-*** Require tools for testing
-- cask
-  - install via brew
-    #+begin_src shell
-      brew install cask
-    #+end_src
+This chains the indent checker after the standard Emacs Lisp checkers.
 
-  - manual install
-    #+begin_src shell
-      cd ~/
-      hub clone cask/cask
-      export PATH="$HOME/.cask/bin:$PATH"
-    #+end_src
+** Batch Mode
 
-*** Running test
-Below operation flow is recommended.
+For CI pipelines or pre-commit hooks:
+
 #+begin_src shell
-  make                              # Install git-hooks in local .git
-
-  git branch [feature-branch]       # Create branch named [feature-branch]
-  git checkout [feature-branch]     # Checkout branch named [feature-branch]
-
-  # <edit loop>
-  emacs indent-lint.el              # Edit something you want
-
-  make test                         # Test indent-lint
-  git commit -am "brabra"           # Commit (auto-run test before commit)
-  # </edit loop>
-
-  hub fork                          # Create fork at GitHub
-  git push [user] [feature-branch]  # Push feature-branch to your fork
-  hub pull-request                  # Create pull-request
+  emacs -Q --batch -l indent-lint.el -f indent-lint-batch file1.el file2.el
 #+end_src
 
-** Migration
+Exit codes:
+- 0: No indentation errors
+- 1: Indentation errors found
+- 2: Diff program error
+- 3: Error during indentation processing
+- 100: Timeout
 
-** License
-#+begin_example
-  General Public License Version 3 (GPLv3)
-  Copyright (c) Naoya Yamashita - https://conao3.com
-  https://github.com/conao3/indent-lint.el/blob/master/LICENSE
-#+end_example
+* Configuration
 
-** Author
-- Naoya Yamashita ([[https://github.com/conao3][conao3]])
+| Variable                      | Description                                      | Default   |
+|-------------------------------+--------------------------------------------------+-----------|
+| =indent-lint-before-indent-fn=  | Function to run before indenting (receives buffers) | =#'ignore=  |
+| =indent-lint-verbose=           | Show full diff output                            | =t=         |
+| =indent-lint-popup=             | Automatically display diff buffer                | =t=         |
+| =indent-lint-batch-timeout=     | Timeout for batch operations (seconds)           | =10=        |
 
-** Contributors
+* Requirements
+
+- Emacs 25.1 or later
+- [[https://github.com/chuntaro/emacs-async-await][async-await]]
+- [[https://github.com/jwiegley/emacs-async][async]]
+- [[https://github.com/chuntaro/emacs-promise][promise]]
+- [[https://www.flycheck.org/][flycheck]] (for flycheck-indent)
+
+* Contributing
+
+Contributions are welcome. Please open an issue or submit a pull request on GitHub.
+
+To run the test suite locally:
+
+#+begin_src shell
+  # Install Cask (https://github.com/cask/cask)
+  make test
+#+end_src
+
+* License
+
+GPL-3.0. See [[https://github.com/conao3/indent-lint.el/blob/master/LICENSE][LICENSE]] for details.
+
+* Author
+
+Naoya Yamashita ([[https://github.com/conao3][conao3]])
